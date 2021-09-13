@@ -4,10 +4,13 @@ import (
 	"fmt"
 
 	"github.com/Yemanden/block-chain/pkg/blockchain"
+	"github.com/Yemanden/block-chain/pkg/proofofwork"
 )
 
 func main() {
-	bc := blockchain.New()
+	proofOfWordGenerator := proofofwork.New()
+
+	bc := blockchain.New(proofOfWordGenerator)
 
 	bc.AddBlock("Send 1 BTC to Ivan")
 	bc.AddBlock("Send 2 more BTC to Ivan")
