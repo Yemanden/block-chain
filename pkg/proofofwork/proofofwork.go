@@ -17,16 +17,21 @@ const (
 	maxNonce   = math.MaxInt64
 )
 
+type ProofOfWork interface {
+	Run() (nonce int, hashByte []byte)
+	Validate() bool
+}
+
 type proofOfWork struct {
 	block  models.Block
 	target *big.Int
 }
 
-func (p *proofOfWork) run() (nonce int, hashByte []byte) {
+func (p *proofOfWork) Run() (nonce int, hashByte []byte) {
 	var hashInt big.Int
 	var hash [32]byte
 
-	fmt.Printf("Mining the block containing \"%s\"\n", p.block.GetData())
+	fmt.Printf("Mining the block containing \"%s\"\n", p.block.Data)
 	for nonce = 0; nonce < maxNonce; nonce++ {
 		data := p.prepareData(nonce)
 		hash = sha256.Sum256(data)
@@ -43,13 +48,25 @@ func (p *proofOfWork) run() (nonce int, hashByte []byte) {
 	return nonce, hash[:]
 }
 
+func (p *proofOfWork) Validate() bool {
+	var hashInt big.Int
+
+	data := p.prepareData(p.block.Nonce)
+	hash := sha256.Sum256(data)
+	hashInt.SetBytes(hash[:])
+
+	isValid := hashInt.Cmp(p.target) == -1
+
+	return isValid
+}
+
 func (p *proofOfWork) prepareData(nonce int) []byte {
 	// объединяем данные, в качестве разделителя - ничего
 	data := bytes.Join(
 		[][]byte{
-			p.block.GetPrevHash(),
-			p.block.GetData(),
-			intToHex(p.block.GetTimestamp()),
+			p.block.PrevBlockHash,
+			p.block.Data,
+			intToHex(p.block.Timestamp),
 			intToHex(int64(targetBits)),
 			intToHex(int64(nonce)),
 		},
@@ -69,7 +86,7 @@ func intToHex(num int64) []byte {
 	return buff.Bytes()
 }
 
-func newPoW(b models.Block) *proofOfWork {
+func NewProofOfWork(b models.Block) ProofOfWork {
 	target := big.NewInt(1)                  // 63 нуля и одна 1
 	target.Lsh(target, uint(256-targetBits)) // смещение влево на (256-targetBits)/4 символов. 4 - количество бит в символе hex
 

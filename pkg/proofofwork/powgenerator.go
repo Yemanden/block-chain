@@ -9,7 +9,7 @@ type PoWGenerator interface {
 type powGenerator struct{}
 
 func (p *powGenerator) Generate(block models.Block) (int, []byte) {
-	return newPoW(block).run()
+	return NewProofOfWork(block).Run()
 }
 
 func New() PoWGenerator {
